@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <!--mybatis可以使用properties来引入外部properties资源
+    resource 引入类路径下的资源
+    url引入磁盘资源
+    -->
+    <properties resource="dbconfig.properties"/>
+
+    <!-- settings设置 -->
+    <settings>
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+<!-- 开启属性延迟加载       -->
+        <setting name="lazyLoadingEnabled" value="true"/>
+
+        <!--此配置只适用于二级缓存      显示开启二级缓存-->
+        <setting name="cacheEnabled" value="true"/>
+    </settings>
+
+<!--    <plugins>-->
+<!--        <plugin interceptor="com.amarsoft.mybatis.plugin.MyPlugin">-->
+<!--            <property name="username" value="root"/>-->
+<!--            <property name="password" value="root"/>-->
+<!--        </plugin>-->
+<!--    </plugins>-->
+
+
+    <!-- typeAliases 可以设置类型别名
+        如果没有写alias ，默认类名小写
+    -->
+    <typeAliases>
+        <typeAlias type="com.amarsoft.mybatis.entity.Employee" alias="employee"></typeAlias>
+
+        <!--  可以为某个包下的类  批量起别名  这样有一个问题：子包下有一个同名的类，那么别名就会冲突，所以可以在bean上加@Alias      -->
+        <package name="com.amarsoft.mybatis.entity"/>
+    </typeAliases>
+<!-- environments 可以配置多个环境 -->
+    <environments default="mysql">
+        <environment id="oracle">
+            <transactionManager type="MANAGED"></transactionManager>
+            <dataSource type="POOLED">
+                <property name="driver" value="oracle.jdbc.driver.OracleDriver"/>
+                <property name="url" value="jdbc:oracle:thin:@localhost:1521:XE"/>
+                <property name="username" value="oracle"/>
+                <property name="password" value="oracle"/>
+            </dataSource>
+        </environment>
+        <environment id="mysql">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver" value="${jdbc.driver}"/>
+                <property name="url" value="${jdbc.url}"/>
+                <property name="username" value="${jdbc.username}"/>
+                <property name="password" value="${jdbc.password}"/>
+            </dataSource>
+        </environment>
+    </environments>
+<!--    databaseIdProvider   用来适配不同数据库厂商   在mapper.xml中配置-->
+    <databaseIdProvider type="DB_VENDOR">
+        <property name="SQL Server" value="sqlserver"/>
+        <property name="DB2" value="db2"/>
+        <property name="Oracle" value="oracle" />
+        <property name="MYSQL" value="mysql" />
+    </databaseIdProvider>
+<!--  sql映射文件  注册到全局配置中
+    class：注册接口，当注册接口时，xml必须和接口类在同一包下，且同名  ,这种方式用来注册注解版的
+-->
+    <mappers>
+        <mapper resource="com/amarsoft/mybatis/mapper/EmployeeMapper.xml"/>
+        <mapper resource="com/amarsoft/mybatis/mapper/DepartmentMapper.xml"/>
+        <mapper resource="com/amarsoft/mybatis/mapper/EmployeeDynamicMapper.xml"/>
+<!--        <mapper class="com.amarsoft.mybatis.dao.EmployeeDaoAnnoation"/>-->
+    </mappers>
+
+</configuration>
+

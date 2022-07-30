@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.amarsoft.mybatis.dao.EmployeeDynamicMapper">
+<!--
+    if
+    choose (when, otherwise)
+    trim (where, set)
+    foreach
+-->
+
+    <select id="getEmpsByIF" resultType="employee">
+        select * from employee
+    --     注意  使用where标签 来动态控制where加不加
+        <where>
+            <if test="id != null">
+                id = #{id}
+            </if>
+            <if test="lastName != null &amp;&amp; lastName != &quot;&quot;">
+                and last_name = #{lastName}
+            </if>
+            <if test="email != null &amp;&amp; email.trim() != &quot;&quot;">
+                and email = #{email}
+            </if>
+            <if test="gender == 0 &amp;&amp; gender == 1">
+                and gender = #{gender}
+            </if>
+        </where>
+    </select>
+
+    <select id="getEmpsByIFTrim" resultType="employee">
+        select * from employee
+        <trim prefix="where" suffixOverrides="and">
+            <if test="id != null">
+                id = #{id} and
+            </if>
+            <if test="lastName != null &amp;&amp; lastName != &quot;&quot;">
+                last_name = #{lastName} and
+            </if>
+            <if test="email != null &amp;&amp; email.trim() != &quot;&quot;">
+                email = #{email} and
+            </if>
+            <if test="gender == 0 &amp;&amp; gender == 1">
+                gender = #{gender}
+            </if>
+        </trim>
+    </select>
+
+    <select id="getEmpsByIFChoose" resultType="employee">
+        select * from employee
+        <where>
+            <choose>
+                <when test="id != null &amp;&amp; id != &quot;&quot;">
+                    id = #{id}
+                </when>
+                <when test="lastName != null &amp;&amp; lastName != &quot;&quot;">
+                    last_name = #{lastName}
+                </when>
+            </choose>
+        </where>
+    </select>
+
+    <update id="updateEmp">
+        update employee
+            <set>
+                <if test="lastName != null">
+                    last_name = #{lastName},
+                </if>
+                <if test="email != null">
+                    email = #{email}
+                </if>
+            </set>
+        where id = #{id}
+    </update>
+
+    <select id="getEmpsByIFForEach" resultType="employee">
+        select * from employee where id IN
+        <foreach collection="ids" item="item_id" separator="," open="(" close=")">
+            #{item_id}
+        </foreach>
+    </select>
+
+    <insert id="addEmps">
+        insert into employee (last_name,gender,email,d_id)
+        values
+            <foreach collection="list" item="emp" separator=",">
+                (#{emp.lastName},#{emp.gender},#{emp.email},#{emp.department.id})
+            </foreach>
+    </insert>
+</mapper>

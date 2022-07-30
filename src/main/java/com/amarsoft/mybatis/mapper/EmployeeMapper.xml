@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.amarsoft.mybatis.dao.EmployeeMapper">
+
+    <!--
+
+    eviction:回收策略
+            LRU – 最近最少使用：移除最长时间不被使用的对象。
+            FIFO – 先进先出：按对象进入缓存的顺序来移除它们。
+            SOFT – 软引用：基于垃圾回收器状态和软引用规则移除对象。
+            WEAK – 弱引用：更积极地基于垃圾收集器状态和弱引用规则移除对象
+    默认的清除策略是 LRU。
+
+    flushInterval（刷新间隔）属性可以被设置为任意的正整数，设置的值应该是一个以毫秒为单位的合理时间量。 默认情况是不设置，也就是没有刷新间隔，缓存仅仅会在调用语句时刷新。
+
+    size（引用数目）属性可以被设置为任意正整数，要注意欲缓存对象的大小和运行环境中可用的内存资源。默认值是 1024。
+
+    readOnly（只读）属性可以被设置为 true 或 false。只读的缓存会给所有调用者返回缓存对象的相同实例。 因此这些对象不能被修改。这就提供了可观的性能提升。而可读写的缓存会（通过序列化）返回缓存对象的拷贝。 速度上会慢一些，但是更安全，因此默认值是 false。
+
+    提示 二级缓存是事务性的。这意味着，当 SqlSession 完成并提交时，或是完成并回滚，但没有执行 flushCache=true 的 insert/delete/update 语句时，缓存会获得更新。
+
+    -->
+<!--    <cache eviction="FIFO" flushInterval="60000" readOnly="false"></cache>-->
+
+    <!--使用ehcache做缓存  需要一个ehcache.xml文件-->
+    <cache type="org.mybatis.caches.ehcache.EhcacheCache"></cache>
+
+    <resultMap id="myEmp" type="employee">
+        <id column="id" property="id"></id>
+        <result column="last_name" property="lastName"></result>
+        <result column="gender" property="gender"></result>
+        <result column="email" property="email"></result>
+    </resultMap>
+
+    <resultMap id="myEmpAndDept" type="employee">
+        <id column="eid" property="id"></id>
+        <result column="eName" property="lastName"></result>
+        <result column="eGender" property="gender"></result>
+        <result column="eemail" property="email"></result>
+        <result column="did" property="department.id"></result>
+        <result column="dName" property="department.name"></result>
+    </resultMap>
+
+    <resultMap id="myEmpAndDept2" type="employee">
+        <id column="eid" property="id"></id>
+        <result column="eName" property="lastName"></result>
+        <result column="eGender" property="gender"></result>
+        <result column="eemail" property="email"></result>
+        <association property="department" javaType="dept">
+            <id property="id" column="id"></id>
+            <result column="name" property="name"></result>
+        </association>
+    </resultMap>
+
+    <resultMap id="myEmpStep" type="employee">
+        <id column="eid" property="id"></id>
+        <result column="eName" property="lastName"></result>
+        <result column="eGender" property="gender"></result>
+        <result column="eemail" property="email"></result>
+        <association property="department"
+                     select="com.amarsoft.mybatis.dao.DepartmentMapper.getDepartmentByID" column="did" fetchType="eager">
+        </association>
+    </resultMap>
+
+    <resultMap id="myEmpStepdis" type="employee">
+        <id column="eid" property="id"></id>
+        <result column="eName" property="lastName"></result>
+        <result column="eGender" property="gender"></result>
+        <result column="eemail" property="email"></result>
+        <association property="department"
+                     select="com.amarsoft.mybatis.dao.DepartmentMapper.getDepartmentByID" column="did" fetchType="eager">
+        </association>
+<!--   discriminator  鉴别器  可以针对指定的列名来进行后续操作     -->
+        <discriminator javaType="String" column="gender">
+            <case value="0" resultType="employee">
+                <association property="department"
+                             select="com.amarsoft.mybatis.dao.DepartmentMapper.getDepartmentByID" column="did" fetchType="eager">
+                </association>
+            </case>
+            <case value="1" resultType="employee">
+                <id column="id" property="id"></id>
+                <result column="last_name" property="lastName"></result>
+                <result column="gender" property="gender"></result>
+                <result column="last_name" property="email"></result>
+            </case>
+        </discriminator>
+    </resultMap>
+
+
+    <!--每个select都有一个属性 useCache ，表示用不用二级缓存-->
+    <!--每个select都有一个属性 flushCache  ，默认是false ，表示不清空缓存，如果改为true，则每次查完就会清空一二级缓存-->
+    <select id="getEmpByID" resultType="employee" useCache="true">
+        select * from employee where id = #{id}
+    </select>
+
+    <select id="getEmpByIDStep" resultMap="myEmpStep" databaseId="mysql">
+        select * from employee where id = #{id}
+    </select>
+
+    <select id="getEmpByMap" resultType="employee">
+        select * from employee where id = #{id}
+    </select>
+
+    <select id="getEmpForList" resultMap="myEmp">
+        <bind name="_lastName" value="'%'+name+'%'"/>
+        select * from employee where last_name like #{name}
+    </select>
+
+    <select id="getEmpAndDept" resultMap="myEmpAndDept">
+        select e.id as eid,e.last_name as eName,e.gender as eGender,e.email as eemail,d.id as did,d.name as dName from employee e,department d where e.d_id = d.id and e.id = #{id}
+    </select>
+
+    <!--    <insert id="insertEmp" parameterType="employee" useGeneratedKeys="true" keyProperty="id" databaseId="mysql">-->
+<!--        insert into employee (last_name,gender,email) values (#{lastName},#{gender},#{email})-->
+<!--    </insert>-->
+
+    <!--每个增删改  都有一个属性 flushCache 默认= 'true' ,所以每次增删改都会清空一级缓存和二级缓存-->
+    <insert id="insertEmp" parameterType="employee" databaseId="oracle" flushCache="true">
+        <selectKey keyProperty="id" order="BEFORE" resultType="Integer">
+            select mybatis.nextval from dual
+        </selectKey>
+
+        insert into ORACLE."employee_yyy" ("id","last_name","gender","email") values (#{id},#{lastName},#{gender},#{email})
+    </insert>
+
+    <update id="updateEmpByID" parameterType="employee">
+        update employee set last_name = #{lastName},gender = #{gender},email = #{email}
+                    where id = #{id}
+    </update>
+
+    <delete id="deleteEmpByID" parameterType="integer">
+        delete from employee where id = #{id}
+    </delete>
+    
+    
+    <sql id="insertInfo">
+        last_name,gender,email
+    </sql>
+</mapper>
